@@ -1,2 +1,3 @@
 # sentiment-analysis
-Real time sentiment analysis on twitter
+Real-time sentiment analysis on twitter.
+

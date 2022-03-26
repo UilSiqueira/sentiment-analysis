@@ -12,13 +12,12 @@ import requests
 import json
 
 import tensorflow as tf
-tf.__version__
+tf.__version__  
 
 from tensorflow.keras import layers
 import tensorflow_datasets as tfds
 
-'''   --- Loading Files ---   '''
-
+# Columns for traning
 cols = ['sentiment', 'id', 'date', 'query', 'user', 'text']
 
 # dataset with 1.6 million tweets  
@@ -26,8 +25,7 @@ train_data = pd.read_csv('train.csv', header = None, names = cols, encoding="lat
 
 train_data.sentiment.unique()
 
-'''   --- Pre-processing ---   '''
-
+# Pre-processing 
 data = train_data
 
 data.drop(['id', 'date', 'query', 'user'], axis = 1, inplace=True)
@@ -40,7 +38,10 @@ X
 y = data.iloc[:, 0].values
 y
 
-'''   --- Creating a dataset with 40K tweets --- '''
+'''
+Creating a dataset with 40K tweets
+
+'''
 
 from sklearn.model_selection import train_test_split
 X, _, y, _ = train_test_split(X, y, test_size = 0.75, stratify = y)
@@ -49,15 +50,18 @@ X, _, y, _ = train_test_split(X, y, test_size = 0.75, stratify = y)
 unique, counts = np.unique(y, return_counts=True)
 unique, counts
 
-'''   --- Removing stopwords can increase the training and validation accuracy ---    '''
+# Removing stopwords can increase the training and validation accuracy
 nltk.download("stopwords")
 
 stop_words = []
 for word in stopwords.words('english'):
   stop_words.append(word)
 
-'''   --- I did some tests and remove the words bellow from stopwords. Doing 
-        some tests here can increase accuracy. ---   '''
+'''
+I did some tests and remove the words bellow from stopwords.
+Doing some tests here can increase accuracy.
+
+'''
 
 stop_words_out = ["no","nor","not","don","don't","ain","aren","aren't",\
                   "couldn","couldn't","didn","didn't","doesn","doesn't",\
@@ -65,8 +69,11 @@ stop_words_out = ["no","nor","not","don","don't","ain","aren","aren't",\
 
 stop_words = [word for word in stop_words  if word not in stop_words_out]
 
-'''   --- Cleaning the tweets ---'''
-# Do some tests here, it can also encrease the accuracy.
+'''
+Cleaning the tweets
+Do some tests here, it can also encrease the accuracy.
+
+'''
 
 def clean_tweets(tweet):
   tweet = re.sub(r"@[A-Za-z0-9]+", ' ', tweet)
@@ -84,30 +91,28 @@ def clean_tweets(tweet):
   
   return tweet
 
-'''   --- Testing the function ---   '''
-
+# Testing the function
 text = "i like you"
 clean_tweets(text)
 
 text = "i hate you"
 clean_tweets(text)
 
-'''   --- Cleaning all tweets ---   '''
+# Cleaning all tweets
 data_clean = [clean_tweets(tweet) for tweet in X]
 
-'''   --- Getting the label ---   '''
+# Getting the label
 data_labels = y
 
 # Changing labels to 1 and 0 (Positive, Negative)
 data_labels[data_labels == 4] = 1
 
-'''   --- Token ---   ''' 
+# Token
 tokenizer = tfds.deprecated.text.SubwordTextEncoder.build_from_corpus(data_clean, target_vocab_size=2**16)
 
 data_inputs = [tokenizer.encode(sentence) for sentence in data_clean]
 
-'''   --- Padding ---   ''' 
-
+# Padding
 max_len = max([len(sentence) for sentence in data_inputs])
 
 data_inputs = tf.keras.preprocessing.sequence.pad_sequences(data_inputs,
@@ -117,15 +122,13 @@ data_inputs = tf.keras.preprocessing.sequence.pad_sequences(data_inputs,
 
 
 
-'''   --- Spliting the dataset into training and test ---   ''' 
-
+# Spliting the dataset into training and test
 train_inputs, test_inputs, train_labels, test_labels = train_test_split(data_inputs,
                                                                         data_labels,
                                                                         test_size=0.3,
                                                                         stratify = data_labels)
 
-'''   --- Building the model ---   ''' 
-
+# Building the model
 class DCNN(tf.keras.Model):
 
   def __init__(self,
@@ -172,8 +175,7 @@ class DCNN(tf.keras.Model):
 
     return output
 
-'''   --- Configuring the parameters ---   ''' 
-
+# Configuring the parameters
 vocab_size = tokenizer.vocab_size
 vocab_size
 
@@ -189,8 +191,7 @@ dropout_rate = 0.2
 # Short training 
 nb_epochs = 5
 
-'''   --- Training ---   ''' 
-    
+# Training 
 Dcnn = DCNN(vocab_size=vocab_size, emb_dim=emb_dim, nb_filters=nb_filters,
             ffn_units=ffn_units, nb_classes=nb_classes, dropout_rate=dropout_rate)
 
@@ -212,8 +213,7 @@ ckpt_manager.save()
 
 # Training dataset: 76% accuracy
 
-'''   --- Model evaluation ---   ''' 
-
+# Model evaluation
 results = Dcnn.evaluate(test_inputs, test_labels, batch_size=batch_size)
 print(results)
 # Test dataset: 76% accuracy
@@ -226,11 +226,14 @@ y_pred_test = (y_pred_test > 0.5)
 from sklearn.metrics import confusion_matrix
 cm = confusion_matrix(test_labels, y_pred_test)
 
-'''   --- Result confusion matrix ---   ''' 
+# Result confusion matrix
 cm
 
-'''   --- Twitter Authentication ---   ''' 
-#You can obtain your keys on 'developer.twitter.com/'
+'''
+Twitter Authentication
+You can obtain your keys on 'developer.twitter.com/'
+
+'''
 
 key = 'Your consumer key'
 key_secret = 'Your consumer secret'
@@ -248,8 +251,8 @@ auth = requests_oauthlib.OAuth1(key, key_secret, token, token_secret)
 # Number of tweets in a batch
 tweets_num = 100
 
-'''   --- Tweeter conexion ---   ''' 
 
+# Tweeter conexion
 def stream_twitter():
   response = requests.get(url_search, auth = auth, stream = True)
   if response.status_code == 200:
@@ -263,9 +266,9 @@ def stream_twitter():
       yield str(contents)
     except:
       return False
-  
-'''   --- Batch for analysis ---   ''' 
+ 
 
+# Batch for analysis
 def twitter_list(stream_twitter):
     count=0
     list_stream =[]
@@ -277,8 +280,8 @@ def twitter_list(stream_twitter):
             count+=1
     return list_stream
 
-'''   --- Tweet Analysis ---   ''' 
 
+# Tweet Analysis
 def twitter_sentiment(twitter_list):
     n=1
     positive = 0
@@ -298,8 +301,7 @@ def twitter_sentiment(twitter_list):
     print( 'Last {} tweets:\n' 'Positive: {}\nNegative: {}\n'.format(tweets_num, positive, negative))
     return positive, negative
     sleep(1)
-    
-'''   --- the main function ---   ''' 
+
 
 def main():
     positive = 0

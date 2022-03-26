@@ -175,7 +175,7 @@ class DCNN(tf.keras.Model):
 
     return output
 
-# Configuring the parameters
+# Parameters configuration
 vocab_size = tokenizer.vocab_size
 vocab_size
 

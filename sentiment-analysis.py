@@ -38,11 +38,7 @@ X
 y = data.iloc[:, 0].values
 y
 
-'''
-Creating a dataset with 40K tweets
-
-'''
-
+# Creating a dataset with 40K tweets
 from sklearn.model_selection import train_test_split
 X, _, y, _ = train_test_split(X, y, test_size = 0.75, stratify = y)
 
@@ -57,24 +53,18 @@ stop_words = []
 for word in stopwords.words('english'):
   stop_words.append(word)
 
-'''
-I did some tests and remove the words bellow from stopwords.
-Doing some tests here can increase accuracy.
-
-'''
-
+# I did some tests and remove the words bellow from stopwords.
+#
+# Doing some tests here can increase accuracy.
 stop_words_out = ["no","nor","not","don","don't","ain","aren","aren't",\
                   "couldn","couldn't","didn","didn't","doesn","doesn't",\
                   "isn","isn't","wasn","wasn't","weren","weren't"]
 
 stop_words = [word for word in stop_words  if word not in stop_words_out]
 
-'''
-Cleaning the tweets
-Do some tests here, it can also encrease the accuracy.
 
-'''
-
+# Cleaning the tweets
+# Do some tests here, it can also encrease the accuracy.
 def clean_tweets(tweet):
   tweet = re.sub(r"@[A-Za-z0-9]+", ' ', tweet)
   tweet = re.sub(r"https?://[A-Za-z0-9./]+", ' ', tweet)
@@ -175,85 +165,81 @@ class DCNN(tf.keras.Model):
 
     return output
 
-# Parameters configuration
-vocab_size = tokenizer.vocab_size
-vocab_size
+    # Parameters configuration
+    vocab_size = tokenizer.vocab_size
+    vocab_size
 
-emb_dim = 200
-nb_filters = 100
-ffn_units = 256
-batch_size = 64
-nb_classes = len(set(train_labels))
-nb_classes
+    emb_dim = 200
+    nb_filters = 100
+    ffn_units = 256
+    batch_size = 64
+    nb_classes = len(set(train_labels))
+    nb_classes
 
-dropout_rate = 0.2
+    dropout_rate = 0.2
 
-# Short training 
-nb_epochs = 5
+    # Short training 
+    nb_epochs = 5
 
-# Training 
-Dcnn = DCNN(vocab_size=vocab_size, emb_dim=emb_dim, nb_filters=nb_filters,
-            ffn_units=ffn_units, nb_classes=nb_classes, dropout_rate=dropout_rate)
+    # Training 
+    Dcnn = DCNN(vocab_size=vocab_size, emb_dim=emb_dim, nb_filters=nb_filters,
+              ffn_units=ffn_units, nb_classes=nb_classes, dropout_rate=dropout_rate)
 
-Dcnn.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    Dcnn.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-checkpoint_path = "./"
-ckpt = tf.train.Checkpoint(Dcnn=Dcnn)
-ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=5)
-if ckpt_manager.latest_checkpoint:
-  ckpt.restore(ckpt_manager.latest_checkpoint)
-  print('Latest checkpoint restored')
+    checkpoint_path = "./"
+    ckpt = tf.train.Checkpoint(Dcnn=Dcnn)
+    ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=5)
+    if ckpt_manager.latest_checkpoint:
+    ckpt.restore(ckpt_manager.latest_checkpoint)
+    print('Latest checkpoint restored')
 
-history = Dcnn.fit(train_inputs, train_labels,
-                   batch_size = batch_size,
-                   epochs = nb_epochs,
-                   verbose = 1,
-                   validation_split = 0.10)
-ckpt_manager.save()
+    history = Dcnn.fit(train_inputs, train_labels,
+                     batch_size = batch_size,
+                     epochs = nb_epochs,
+                     verbose = 1,
+                     validation_split = 0.10)
+    ckpt_manager.save()
 
-# Training dataset: 76% accuracy
+    # Training dataset: 76% accuracy
+    #
+    # Model evaluation
+    results = Dcnn.evaluate(test_inputs, test_labels, batch_size=batch_size)
+    print(results)
+    # Test dataset: 76% accuracy
 
-# Model evaluation
-results = Dcnn.evaluate(test_inputs, test_labels, batch_size=batch_size)
-print(results)
-# Test dataset: 76% accuracy
+    y_pred_test = Dcnn.predict(test_inputs)
 
-y_pred_test = Dcnn.predict(test_inputs)
-
-y_pred_test = (y_pred_test > 0.5)
-
-
-from sklearn.metrics import confusion_matrix
-cm = confusion_matrix(test_labels, y_pred_test)
-
-# Result confusion matrix
-cm
-
-'''
-Twitter Authentication
-You can obtain your keys on 'developer.twitter.com/'
-
-'''
-
-key = 'Your consumer key'
-key_secret = 'Your consumer secret'
-
-token = 'Your access token'
-token_secret = 'Your access token secret'
-
-search = 'vaccine'
-
-url = 'https://stream.twitter.com/1.1/statuses/sample.json'
-url_search = 'https://stream.twitter.com/1.1/statuses/filter.json?track='+search+'&lang=en'
-
-auth = requests_oauthlib.OAuth1(key, key_secret, token, token_secret)
-
-# Number of tweets in a batch
-tweets_num = 100
+    y_pred_test = (y_pred_test > 0.5)
 
 
-# Tweeter conexion
+    from sklearn.metrics import confusion_matrix
+    cm = confusion_matrix(test_labels, y_pred_test)
+
+    # Result confusion matrix
+    cm
+
+    # Twitter Authentication
+    # You can obtain your keys on 'developer.twitter.com/'
+    key = 'Your consumer key'
+    key_secret = 'Your consumer secret'
+
+    token = 'Your access token'
+    token_secret = 'Your access token secret'
+
+    search = 'vaccine'
+
+    url = 'https://stream.twitter.com/1.1/statuses/sample.json'
+    url_search = 'https://stream.twitter.com/1.1/statuses/filter.json?track='+search+'&lang=en'
+
+    auth = requests_oauthlib.OAuth1(key, key_secret, token, token_secret)
+
+    # Number of tweets in a batch
+    tweets_num = 100
+
+
 def stream_twitter():
+  """Makes the conexion with Tweeter API"""
   response = requests.get(url_search, auth = auth, stream = True)
   if response.status_code == 200:
       print("\nGetting tweets...wait...")
@@ -268,8 +254,13 @@ def stream_twitter():
       return False
  
 
-# Batch for analysis
 def twitter_list(stream_twitter):
+    """
+    This function creates the Batch for analysis
+
+    Keywords argument:
+    stream_twitter -- Function that create the conexions.
+    """
     count=0
     list_stream =[]
     for i in stream_twitter:

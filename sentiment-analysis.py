@@ -259,29 +259,35 @@ def twitter_list(stream_twitter):
     This function creates the Batch for analysis
 
     Keywords argument:
-    stream_twitter -- Function that create the conexions.
+    stream_twitter -- Function that creates the conexion.
     """
     count=0
     list_stream =[]
-    for i in stream_twitter:
+    for stream in stream_twitter:
         if count >= tweets_num:
             break
-        if search in i and i not in list_stream:
-            list_stream.append(i)
+        if search in stream and stream not in list_stream:
+            list_stream.append(stream)
             count+=1
     return list_stream
 
 
 # Tweet Analysis
 def twitter_sentiment(twitter_list):
+    """
+    This function parses every tweet in a batch.
+
+    Keywords argument:
+    twitter_list -- Function that creates the batch.
+    """
     n=1
     positive = 0
     negative = 0
     
-    for i in twitter_list:
-        print("tweet {}\n{}".format(n,i))
+    for twitter in twitter_list:
+        print("tweet {}\n{}".format(n,twitter))
         n+=1
-        text = tokenizer.encode(clean_tweets(i))
+        text = tokenizer.encode(clean_tweets(twitter))
         result = Dcnn(np.array([text]), training=False).numpy()
         if result > 0.5:
             positive += 1
